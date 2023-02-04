@@ -1,0 +1,128 @@
+----------- PROGRAM ----------
+Prg. Program ::= [Def];
+terminator Def "";
+
+-----------   DEFS   ----------
+DDecl.    Def ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;
+DHead.    Def ::= Type Id "(" [Arg] ")" ";";
+DUsing.   Def ::= "using" QConst ";" ;
+DTypedef. Def ::= "typedef" Type Id ";"; 
+DInit.    Def ::= Type Variable ";";
+DInitMul. Def ::= Type Variable "," [Variable] ";" ;
+
+VarDecl.  Var ::= Type Id;
+VarInit.  Var ::= Type Id "=" Exp;
+separator nonempty Var ",";
+
+separator Arg ",";
+terminator Stm "";
+
+----------- STATEMENTS ----------
+SExpr.      Stm ::= Exp ";";
+
+SInit.      Stm ::= Type Variable ";";
+SInitMul.   Stm ::= Type Variable "," [Variable] ";";
+
+SReturn.    Stm ::= "return" Exp ";";
+SWhile.     Stm ::= "while" "(" Exp ")" Stm ;
+SDoWhile.   Stm ::= "do"  Stm   "while" "(" Exp ")" ";";
+SIf.        Stm ::= "if" "(" Exp ")" Stm ;
+SIfElse.    Stm ::= "if" "(" Exp ")" Stm "else" Stm ;
+
+{-SIf and SIfElse cause a shift/reduce conflict. It is caused because it creates ambiguity when parsing.
+However, the shift/reduce caused by SIf and SIfElse is harmless because it doe snot affect the overall meaning or behaviour of the program. 
+The parser can determine which of this two options to apply based on the input. 
+-}
+
+SBlock.     Stm ::= "{" [Stm] "}";
+SFor.       Stm ::= "for" "(" Var ";" Exp ";" Exp ")" Stm ;
+STypedef.   Stm ::= "typedef" Type Id ";"; 
+
+----------- VARIABLES ----------
+VDecl.      Variable ::= Id ;
+VInit.      Variable ::= Id "=" Exp ;
+
+separator nonempty Variable ",";
+
+----------- ARGUMENTS ----------
+ADecl.      Arg ::= Type Id;
+AType.      Arg ::= Type ;
+
+----------- EXPRESIONS ----------
+EQConst. Exp16  ::= QConst ; 
+EInt.    Exp16  ::= Integer ;
+EDouble. Exp16  ::= Double ;
+EString. Exp16  ::= [String] ;
+EChar.   Exp16  ::= Char ; 
+ETrue.   Exp16  ::= "true" ;
+EFalse.  Exp16  ::= "false" ;
+separator nonempty String "";
+
+EArr.    Exp16  ::= Exp16 "[" Exp "]" ;
+ECall.   Exp16  ::= Exp15 "(" [Exp] ")" ;
+
+EDot.    Exp14  ::= Exp14 "." Exp15;
+EArrow.  Exp14  ::= Exp14 "->" Exp15 ;
+
+EPIncr.  Exp14  ::= Exp14 "++" ;
+EPDecr.  Exp14  ::= Exp14 "--" ;
+EStar.   Exp13  ::= "*" Exp13 ;
+ENegate. Exp13  ::= "!" Exp13 ;
+EIncr.   Exp13  ::= "++" Exp13 ;
+EDecr.   Exp13  ::= "--" Exp13 ;
+ENeg.    Exp13  ::= "-" Exp14 ;
+
+EMod.    Exp12  ::= Exp12 "%"  Exp13 ;
+EMul.    Exp12  ::= Exp12 "*"  Exp13 ;
+EDiv.    Exp12  ::= Exp12 "/"  Exp13 ;
+EAdd.    Exp11  ::= Exp11 "+"  Exp12 ;
+ESub.    Exp11  ::= Exp11 "-"  Exp12 ;
+
+EDoubleLt. Exp10 ::= Exp10 "<<" Exp11;
+EDoubleGt. Exp10 ::= Exp10 ">>" Exp11;
+
+ELt.     Exp9  ::= Exp9  "<"  Exp10 ;
+EGt.     Exp9  ::= Exp9  ">"  Exp10 ;
+ELEq.    Exp9  ::= Exp9  "<=" Exp10 ;
+EGEq.    Exp9  ::= Exp9  ">=" Exp10 ;
+EEq.     Exp8  ::= Exp8  "==" Exp9 ;
+ENEq.    Exp8  ::= Exp8  "!=" Exp9 ;
+EAnd.    Exp4  ::= Exp4  "&&" Exp5 ;
+EOr.     Exp3  ::= Exp3  "||" Exp4 ;
+EMinAss. Exp2  ::= Exp3  "-=" Exp2 ;
+EPlusAss. Exp2  ::= Exp3  "+=" Exp2 ;
+EAss.    Exp2  ::= Exp3  "=" Exp2 ;
+EQuest.  Exp2  ::= Exp3  "?" Exp2 ":" Exp2 ;
+EThrow.  Exp2  ::= "throw" Exp2 ;
+ 
+coercions Exp 16 ;
+separator Exp "," ;
+
+----------- QUALIFIED CONSTANTS ----------
+IDecl. Identifier ::= Id;
+QIdent.    QConst ::= [Identifier] ;
+
+separator  nonempty Identifier "::";
+separator nonempty Type ",";
+
+----------- TYPES ----------
+Tbool.   Type ::= "bool" ;
+Tdouble. Type ::= "double" ;
+Tint.    Type ::= "int" ;
+Tvoid.   Type ::= "void" ;
+TQConst. Type ::= QConst ;
+TAnd.    Type ::= Type "&";
+TConst.  Type ::= "const" Type;
+
+{-Addng TConst produces a shift/reduce conflict since the parser is unable to determine how to interpret the last two Type grammar rules. 
+The conflict is caused  the TAnd. This is because the "&" symbol can either be part of a Type (reduced to a Type nonterminal symbol) or shtoken in the input onto the parser stack (TAnd production). 
+The way the grammar is written both actions are valid and so it causes a shift/reduce error. 
+-}
+
+token Id (letter (letter | digit | '_')*) ;
+separator nonempty  Id ",";
+
+----------- COMMENTS ----------
+comment "//" ;
+comment "/*" "*/" ;
+comment "#";
